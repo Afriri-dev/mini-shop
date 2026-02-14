@@ -1,0 +1,14 @@
+{
+  "name": "products-service",
+  "version": "1.0.0",
+  "description": "Microservice Products pour Mini-Shop (Node.js/Express)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"No test specified\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql2": "^3.9.2"
+  }
+}

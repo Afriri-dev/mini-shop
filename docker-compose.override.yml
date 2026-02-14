@@ -1,0 +1,24 @@
+services:
+  auth-service:
+    volumes:
+      - ./auth-service/src:/app/src        # monte le code source local
+      - ./auth-service/tests:/app/tests    # monte les tests
+    environment:
+      FLASK_ENV: development               # active le mode dev Flask
+    command: ["python", "src/app.py"]      # relance automatiquement
+
+  orders-service:
+    volumes:
+      - ./orders-service/src:/app/src
+      - ./orders-service/tests:/app/tests
+    environment:
+      FLASK_ENV: development
+    command: ["python", "src/app.py"]
+
+  products-service:
+    volumes:
+      - ./products-service/src:/app/src
+      - ./products-service/tests:/app/tests
+    environment:
+      NODE_ENV: development                # active le mode dev Node.js
+    command: ["npm", "start"]              # ✅ utilise ton script start

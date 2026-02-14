@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: shopdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./shared/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: mysql-db
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: shopdb
+    depends_on:
+      - mysql-db
+    command: ["python", "src/app.py"]   # ✅ force l’exécution du bon fichier
+
+
+  orders-service:
+    build: ./orders-service
+    container_name: orders-service
+    ports:
+      - "5001:5001"
+    environment:
+      DB_HOST: mysql-db
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: shopdb
+    depends_on:
+      - mysql-db
+    command: ["python", "src/app.py"]   # ✅ assure que c’est bien ce fichier  
+
+  products-service:
+    build: ./products-service
+    container_name: products-service
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: mysql-db
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_NAME: shopdb
+    depends_on:
+      - mysql-db
+    command: ["npm", "start"]   # ✅ syntaxe array, plus robuste
