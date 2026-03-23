@@ -1,0 +1,51 @@
+from flask import Blueprint, jsonify, request
+import bcrypt
+from src.db import get_db_connection
+
+# Définition du blueprint pour /signup
+signup_bp = Blueprint("signup", __name__)
+
+@signup_bp.route("/signup", methods=["POST"])
+def signup():
+    """
+    Crée un nouvel utilisateur :
+    - Récupère username, email et password envoyés par le frontend
+    - Hash le mot de passe avec bcrypt
+    - Insère l'utilisateur dans la table 'users'
+    """
+    data = request.get_json()
+    username = data.get("username")
+    email = data.get("email")
+    password = data.get("password")
+
+    if not username or not email or not password:
+        return jsonify({"error": "Tous les champs sont obligatoires"}), 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Vérifie si l'email existe déjà
+        cursor.execute("SELECT id FROM users WHERE email=%s", (email,))
+        existing_user = cursor.fetchone()
+        if existing_user:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Email déjà utilisé"}), 409
+
+        # Hash du mot de passe
+        hashed_pw = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+
+        # Insertion en base
+        cursor.execute(
+            "INSERT INTO users (username, email, password, role) VALUES (%s, %s, %s, %s)",
+            (username, email, hashed_pw.decode("utf-8"), "user")
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({"message": "Utilisateur créé avec succès"}), 201
+
+    except Exception as e:
+        return jsonify({"error": "DB connection failed", "details": str(e)}), 500

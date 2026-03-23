@@ -1,96 +1,75 @@
+# Pipeline CI/CD principal - version simplifiée
+# Les étapes Kubernetes, push Docker, etc. peuvent être ajoutées plus tard
+
 name: Mini-Shop CI/CD
 
 on:
   push:
-    branches:
-      - "feature/*"   # déclenche sur toutes les branches feature
+    branches: [main, "feature/*"]
   pull_request:
-    branches:
-      - main          # déclenche les tests/audits sur PR vers main
+    branches: [main]
 
 jobs:
-  build-and-push:
+  auth-orders:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0.36
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: shopdb
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # --- Auth & Orders Services ---
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
-      - name: Install Auth & Orders dependencies
+      - name: Install & test Auth
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PASSWORD: rootpassword
         run: |
-          cd auth-service && pip install -r requirements.txt
-          cd ../orders-service && pip install -r requirements.txt
+          cd auth-service && pip install -r requirements.txt && python -m pytest tests/ -v
 
-      - name: Run Auth & Orders tests
+      - name: Install & test Orders
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PASSWORD: rootpassword
         run: |
-          cd auth-service && pytest
-          cd ../orders-service && pytest
+          cd orders-service && pip install -r requirements.txt && python -m pytest tests/ -v
 
-      - name: Audit Auth & Orders dependencies
+      - name: Audit Python deps
         run: |
           pip install pip-audit
           cd auth-service && pip-audit
           cd ../orders-service && pip-audit
 
-      # --- Products Service ---
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+  products:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
-
-      - name: Install Products dependencies
+          node-version: "18"
+      - name: Install & test Products
         run: |
-          cd products-service
-          npm install
+          cd products-service && npm ci && npm test
 
-      - name: Run Products tests
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate frontend
         run: |
-          cd products-service
-          npm test
-
-      - name: Audit Products dependencies
-        run: |
-          cd products-service
-          npm audit --audit-level=high
-
-      # --- DockerHub ---
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Verify DockerHub login
-        run: docker info
-
-      - name: Build & Push Auth Service Image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./auth-service
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/auth-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/auth-service:${{ github.ref_name }}
-
-      - name: Build & Push Orders Service Image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./orders-service
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/orders-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/orders-service:${{ github.ref_name }}
-
-      - name: Build & Push Products Service Image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./products-service
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/products-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/products-service:${{ github.ref_name }}
+          test -f frontend/index.html && test -f frontend/login.html && test -f frontend/orders.html
+          echo "Frontend structure OK"

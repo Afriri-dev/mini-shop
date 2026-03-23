@@ -1,0 +1,29 @@
+# Pipeline CI Frontend - validation de structure
+# ESLint/Cypress peuvent être ajoutés quand le frontend aura package.json et config
+
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, "feature/*"]
+    paths:
+      - "frontend/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate frontend structure
+        run: |
+          test -f frontend/index.html
+          test -f frontend/login.html
+          test -f frontend/orders.html
+          test -d frontend/js
+          test -d frontend/css
+          echo "Frontend structure OK"

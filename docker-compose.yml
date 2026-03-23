@@ -1,16 +1,20 @@
-version: '3.8'
+version: "3.8"
 
 services:
   mysql-db:
-    image: mysql:8.0
+    image: mysql:8.0.36   # ✅ Version fixée pour éviter les vulnérabilités liées aux mises à jour non contrôlées
     container_name: mysql-db
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password   # ✅ Le mot de passe root est lu depuis un secret, pas en clair
       MYSQL_DATABASE: shopdb
     ports:
-      - "3306:3306"
+      - "3306:3306"   # ⚠️ Port exposé, à limiter en production (utiliser un réseau interne)
     volumes:
-      - ./shared/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./shared/init.sql:/docker-entrypoint-initdb.d/init.sql   # ✅ Script d’initialisation versionné
+      - mysql-data:/var/lib/mysql   # ✅ Volume persistant pour les données
+    secrets:
+      - mysql_root_password   # ✅ Utilisation de Docker secrets
+    restart: always
 
   auth-service:
     build: ./auth-service
@@ -20,12 +24,14 @@ services:
     environment:
       DB_HOST: mysql-db
       DB_USER: root
-      DB_PASSWORD: rootpassword
+      DB_PASSWORD_FILE: /run/secrets/db_password   # ✅ Mot de passe lu depuis un secret
       DB_NAME: shopdb
     depends_on:
       - mysql-db
-    command: ["python", "src/app.py"]   # ✅ force l’exécution du bon fichier
-
+    command: ["python", "src/app.py"]
+    secrets:
+      - db_password   # ✅ Secret injecté
+    restart: always
 
   orders-service:
     build: ./orders-service
@@ -35,11 +41,14 @@ services:
     environment:
       DB_HOST: mysql-db
       DB_USER: root
-      DB_PASSWORD: rootpassword
+      DB_PASSWORD_FILE: /run/secrets/db_password   # ✅ Pas de mot de passe en clair
       DB_NAME: shopdb
     depends_on:
       - mysql-db
-    command: ["python", "src/app.py"]   # ✅ assure que c’est bien ce fichier  
+    command: ["python", "src/app.py"]
+    secrets:
+      - db_password
+    restart: always
 
   products-service:
     build: ./products-service
@@ -49,8 +58,33 @@ services:
     environment:
       DB_HOST: mysql-db
       DB_USER: root
-      DB_PASSWORD: rootpassword
+      DB_PASSWORD_FILE: /run/secrets/db_password   # ✅ Bonne pratique DevSecOps
       DB_NAME: shopdb
     depends_on:
       - mysql-db
-    command: ["npm", "start"]   # ✅ syntaxe array, plus robuste
+    command: ["npm", "start"]
+    secrets:
+      - db_password
+    restart: always
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html   # ✅ Synchronisation des fichiers locaux pour le développement
+    depends_on:
+      - auth-service
+      - orders-service
+      - products-service
+    restart: always
+
+volumes:
+  mysql-data:   # ✅ Volume persistant pour la base
+
+secrets:
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt   # ✅ Stockage du mot de passe root dans un fichier secret
+  db_password:
+    file: ./secrets/db_password.txt   # ✅ Stockage du mot de passe DB dans un fichier secret

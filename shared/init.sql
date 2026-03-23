@@ -6,15 +6,15 @@
 CREATE DATABASE IF NOT EXISTS shopdb;
 USE shopdb;
 
--- ==========================
 -- Table des utilisateurs
--- ==========================
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,        -- identifiant unique
     username VARCHAR(50) NOT NULL UNIQUE,     -- nom d’utilisateur
-    password VARCHAR(255) NOT NULL,           -- mot de passe haché
+    email VARCHAR(100) NOT NULL UNIQUE,       -- email unique pour login
+    password VARCHAR(255) NOT NULL,           -- mot de passe haché (bcrypt)
     role ENUM('user', 'admin') DEFAULT 'user' -- rôle de l’utilisateur
 );
+
 
 -- ==========================
 -- Table des produits
@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS orders (
     product_id INT NOT NULL,                  -- FK vers products
     quantity INT NOT NULL,                    -- nombre d’unités
     status ENUM('pending', 'confirmed', 'shipped') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- ✅ ajout
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, -- ✅ ajout
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
@@ -44,9 +46,9 @@ CREATE TABLE IF NOT EXISTS orders (
 -- ==========================
 
 -- Utilisateurs de test (⚠️ remplacer HASHED_PASSWORD par un vrai hash bcrypt)
-INSERT INTO users (username, password, role) VALUES
-('admin', 'HASHED_PASSWORD_ADMIN', 'admin'),
-('user1', 'HASHED_PASSWORD_USER1', 'user');
+INSERT INTO users (username, email, password, role) VALUES
+('admin', 'admin@example.com', '$2b$12$LMEY6DfoUOGCrAPIbMk5zutTrH53ZAicFy/vHfJS9apjUKRyvCLNq', 'admin'),
+('user1', 'user1@example.com', '$2b$12$J/NoeeuGmlnJBBB3DpCaG.pgTfHdYgqCRP449hQoHUqS3kckEV/kO', 'user');
 
 -- Produits de test
 INSERT INTO products (name, price, stock) VALUES

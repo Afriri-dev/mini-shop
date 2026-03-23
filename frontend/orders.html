@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Orders Service</title>
+  <!-- Lien vers ton fichier CSS externe -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+<body>
+  <h1 id="welcome">Mes commandes</h1>
+
+  <!-- Bouton de déconnexion -->
+  <button id="logoutBtn" class="btn">Déconnexion</button>
+
+  <!-- Formulaire pour créer une commande -->
+  <form id="orderForm">
+    <label for="product_id">Product ID :</label>
+    <input type="number" id="product_id" name="product_id" required>
+
+    <label for="quantity">Quantité :</label>
+    <input type="number" id="quantity" name="quantity" value="1" min="1" required>
+
+    <button type="submit" class="btn">Créer commande</button>
+  </form>
+
+  <!-- Formulaire pour rechercher une commande par ID -->
+  <form id="searchForm">
+    <label for="order_id">Rechercher commande # :</label>
+    <input type="number" id="order_id" name="order_id" required>
+    <button type="submit" class="btn">Rechercher</button>
+  </form>
+
+  <!-- Zone pour afficher les messages -->
+  <div id="result"></div>
+
+  <h2>Liste des commandes</h2>
+  <div id="ordersList">Chargement des commandes...</div>
+
+  <h2>Commande recherchée</h2>
+  <div id="orderDetail"></div>
+
+  <!-- Charger le script externe -->
+  <script src="js/orders.js"></script>
+</body>
+</html>

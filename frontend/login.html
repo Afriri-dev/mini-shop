@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mini-Shop - Connexion</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <h1>Mini-Shop - Connexion</h1>
+
+  <!-- Formulaire qui envoie directement au backend -->
+  <form id="login-form" action="http://localhost:5000/auth/login" method="POST">
+    <input name="email" id="login-email" type="email" placeholder="Email" required>
+    <input name="password" id="login-password" type="password" placeholder="Mot de passe" required>
+    <button type="submit">Se connecter</button>
+  </form>
+
+  <p>Pas encore inscrit ? <a href="index.html">Créer un compte</a></p>
+
+  <div id="result"></div>
+
+  <!-- Inclusion de login.js si tu veux ajouter des contrôles côté client -->
+  <script src="js/login.js"></script>
+</body>
+</html>

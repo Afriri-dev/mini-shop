@@ -79,5 +79,31 @@ Voir :
 - Il documente la structure du projet et rappelle les règles CI/CD et sécurité.
 - Tes développeurs auront un guide clair dès qu’ils ouvrent le repo.
 
-👉 Veux-tu que je prépare aussi un **README spécifique pour chaque microservice** (Auth, Orders, Products), afin que chaque développeur ait son guide dédié dans son dossier ?
+
+## Tester le workflow ci-cd en local avec Act (sans push réel)
+
+1. Vérifier l’installation :
+   act --version
+   → Tu dois voir la version installée (ex. 0.2.84).
+
+2. Créer un fichier `.secrets` à la racine du projet :
+   DOCKERHUB_USERNAME=dummy
+   DOCKERHUB_TOKEN=dummy
+   → Ces valeurs factices empêchent tout push réel vers DockerHub.
+
+3. Lancer le job de build :
+   act -j build
+   → Exécute uniquement le job de build défini dans le workflow.
+
+4. Simuler un push (sans secrets réels) :
+   act push
+   → Le pipeline s’exécute, mais l’étape docker push échouera proprement.
+
+5. Vérifier les conteneurs :
+   docker-compose up
+   curl -f http://localhost:5000/auth/health
+   curl -f http://localhost:5001/orders/health
+   curl -f http://localhost:5002/products/health
+   curl -f http://localhost:3000/frontend/health
+   → Valide que les microservices tournent correctement en local.
 ```

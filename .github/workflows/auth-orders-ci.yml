@@ -1,64 +1,95 @@
-name: Auth & Orders CI/CD
+# Pipeline CI Auth & Orders - version simplifiée et fonctionnelle
+# S'exécute sur les PR et pushes vers main
+
+name: Auth & Orders CI
 
 on:
   push:
-    branches:
-      - "feature/*"   # déclenche sur toutes les branches feature
+    branches: [main, "feature/*"]
   pull_request:
-    branches:
-      - main          # déclenche les tests/audits sur PR vers main
+    branches: [main]
 
 jobs:
-  build-and-push:
+  test:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0.36
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: shopdb
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
-      - name: Install dependencies
+      - name: Install Auth dependencies
         run: |
           cd auth-service && pip install -r requirements.txt
-          cd ../orders-service && pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Run Auth tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PASSWORD: rootpassword
         run: |
-          cd auth-service && pytest
-          cd ../orders-service && pytest
+          cd auth-service && python -m pytest tests/ -v
 
-      - name: Audit dependencies
+      - name: Install Orders dependencies
+        run: |
+          cd orders-service && pip install -r requirements.txt
+
+      - name: Run Orders tests
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PASSWORD: rootpassword
+        run: |
+          cd orders-service && python -m pytest tests/ -v
+
+      - name: Audit Auth dependencies
         run: |
           pip install pip-audit
           cd auth-service && pip-audit
-          cd ../orders-service && pip-audit
 
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Audit Orders dependencies
+        run: |
+          cd orders-service && pip-audit
 
-      - name: Verify DockerHub login
-        run: docker info
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/feature/'))
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Build & Push Auth Service Image
-        uses: docker/build-push-action@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Auth image
+        uses: docker/build-push-action@v5
         with:
           context: ./auth-service
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/auth-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/auth-service:${{ github.ref_name }}
+          push: false
+          tags: auth-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Build & Push Orders Service Image
-        uses: docker/build-push-action@v4
+      - name: Build Orders image
+        uses: docker/build-push-action@v5
         with:
           context: ./orders-service
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/orders-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/orders-service:${{ github.ref_name }}
+          push: false
+          tags: orders-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

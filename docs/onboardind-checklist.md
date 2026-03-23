@@ -36,11 +36,61 @@ Ce guide permet à chaque nouveau membre de l’équipe de démarrer rapidement 
 - [ ] Vérifier les données de test insérées par `init.sql`
 
 ---
+## 🔹 Étape 5 : Tests
 
-## 🔹 Étape 5 : Tests et CI/CD
-- [ ] Lancer les tests unitaires (`pytest` ou `npm test`)
-- [ ] Vérifier que les pipelines GitHub Actions passent
-- [ ] Vérifier que les images Docker sont poussées sur Docker Hub
+a. Tests fonctionnels (end-to-end)
+
+[ ] Exécuter pytest -m functional pour Auth et Orders.
+
+[ ] Lancer npm run test:functional pour Products.
+
+[ ] Utiliser Cypress pour tester le Frontend et valider les parcours utilisateurs.
+
+b. Tests de performance
+
+[ ] Lancer Locust pour simuler des charges sur Auth et Orders.
+
+[ ] Utiliser Artillery pour tester la performance du Products Service.
+
+[ ] Vérifier la latence et la capacité de montée en charge.
+
+c. Tests de régression
+
+[ ] Exécuter pytest --lf pour Auth et Orders.
+
+[ ] Lancer npm test -- --onlyChanged pour Products.
+
+[ ] Vérifier les snapshots Jest pour détecter les régressions.
+
+d. Build & Push Docker Images
+
+[ ] Auth Service → DockerHub.
+
+[ ] Orders Service → DockerHub.
+
+[ ] Products Service → DockerHub.
+
+[ ] Frontend → DockerHub.
+
+e. Smoke Tests post-déploiement
+
+[ ] Vérifier /auth/health.
+
+[ ] Vérifier /orders/health.
+
+[ ] Vérifier /products/health.
+
+[ ] Vérifier /frontend/health.
+
+f. Validation finale
+
+[ ] Confirmer que tous les tests sont passés.
+
+[ ] Vérifier que les images Docker sont disponibles sur DockerHub.
+
+[ ] S’assurer que l’environnement staging est stable avant passage en production.
+
+
 
 ---
 

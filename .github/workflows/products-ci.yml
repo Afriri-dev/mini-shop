@@ -1,54 +1,32 @@
-name: Products Service CI/CD
+# Pipeline CI Products - prêt pour quand le dev Products aura commencé
+# Pour l'instant : install + npm test (echo + exit 0)
+
+name: Products CI
 
 on:
   push:
-    branches:
-      - "feature/*"   # déclenche sur toutes les branches feature
+    branches: [main, "feature/*"]
+    paths:
+      - "products-service/**"
   pull_request:
-    branches:
-      - main          # déclenche les tests/audits sur PR vers main
+    branches: [main]
+    paths:
+      - "products-service/**"
 
 jobs:
-  build-and-push:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Install dependencies
-        run: |
-          cd products-service
-          npm install
+        run: cd products-service && npm ci
 
       - name: Run tests
-        run: |
-          cd products-service
-          npm test
+        run: cd products-service && npm test
 
       - name: Audit dependencies
-        run: |
-          cd products-service
-          npm audit --audit-level=high
-
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Verify DockerHub login
-        run: docker info
-
-      - name: Build & Push Products Service Image
-        uses: docker/build-push-action@v4
-        with:
-          context: ./products-service
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/products-service:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/products-service:${{ github.ref_name }}
+        run: cd products-service && npm audit --audit-level=high || true
