@@ -386,6 +386,12 @@ Créer le modèle de données de factures multi-boutiques :
 - [ ] Statuts supportés : au minimum `draft_local`, `pending_sync`, `issued`
 - [ ] Tests (ou scripts) pour valider l'isolation tenant_id
 - [ ] `invoice_number` respecte strictement le format `TENANT-000123` (où `TENANT` = `tenant_code` normalisé en majuscules, sans caractères spéciaux)
+- [ ] Mini-règle de normalisation pour `tenants.tenant_code` :
+  - [ ] Stocker en majuscules
+  - [ ] Autoriser uniquement `[A-Z0-9]`
+  - [ ] Longueur max recommandée : 3 à 12 caractères (ex. `TENANT-000123` => `TENANT` fait partie du code)
+  - [ ] Supprimer/mapper tout caractère non autorisé lors de la création (refus si non conforme pour simplifier)
+  - [ ] Contraintes d’unicité sur `tenant_code`
 
 ---
 
